@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: internal_data
+    database: forex-etl-project
+    schema: forex_analysis
+    tables:
+      - name: eurusd_raw
