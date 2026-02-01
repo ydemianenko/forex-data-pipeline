@@ -150,6 +150,21 @@ venv.bak/
 !packages.json
 !selectors.json
 
+# Forex Data Pipeline Specific
+fetch_data/config.ini
+fetch_data/*.json
+.checkpoint
+temp_*.parquet
+data_*.csv
+
+# Documentation (Ukrainian) - not needed in Git
+ARCHITECTURE.md
+CHECKLIST.md
+INDEX.md
+VERSION.md
+INTEGRATION_SUMMARY.md
+SETUP_SECRETS.md
+
 # Spyder project settings
 .spyderproject
 .spyproject
