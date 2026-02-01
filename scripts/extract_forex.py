@@ -170,8 +170,16 @@ def save_to_gcs_parquet(df, bucket_name, symbol, date_str):
         # Temporary local file
         local_file = f"temp_{symbol_clean}_{year}_{month}_{day}.parquet"
         
+        # Fix datetime to avoid TIMESTAMP_NANOS issues with BigQuery
+        df_copy = df.copy()
+        if df_copy.index.name and 'datetime' in df_copy.index.name.lower():
+            df_copy.index = df_copy.index.astype('datetime64[us]')
+        for col in df_copy.columns:
+            if pd.api.types.is_datetime64_any_dtype(df_copy[col]):
+                df_copy[col] = df_copy[col].astype('datetime64[us]')
+        
         # Save as Parquet locally
-        df.to_parquet(local_file, engine='pyarrow', compression='snappy')
+        df_copy.to_parquet(local_file, engine='pyarrow', compression='snappy')
         
         # Upload to GCS (credentials from environment)
         client = storage.Client()
