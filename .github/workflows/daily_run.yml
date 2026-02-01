@@ -52,7 +52,7 @@ jobs:
         env:
           GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
         run: |
-          bq --location=EU ls -d ${{ secrets.GCP_PROJECT_ID }}:forex_analysis || bq --location=EU mk -d ${{ secrets.GCP_PROJECT_ID }}:forex_analysis
+          bq --location=europe-central2 ls -d ${{ secrets.GCP_PROJECT_ID }}:forex_analysis || bq --location=europe-central2 mk -d ${{ secrets.GCP_PROJECT_ID }}:forex_analysis
           bq query --use_legacy_sql=false <<SQL
           CREATE EXTERNAL TABLE IF NOT EXISTS `${{ secrets.GCP_PROJECT_ID }}.forex_analysis.eurusd_raw`
           OPTIONS (
@@ -126,7 +126,7 @@ jobs:
                 method: service-account
                 project: ${{ secrets.GCP_PROJECT_ID }}
                 dataset: forex_analysis
-                location: EU
+                location: europe-central2
                 keyfile: /tmp/sa.json
                 threads: 4
                 timeout_seconds: 300
