@@ -55,7 +55,7 @@ jobs:
           if ! bq --project_id=${{ secrets.GCP_PROJECT_ID }} show ${{ secrets.GCP_PROJECT_ID }}:forex_analysis >/dev/null 2>&1; then
             bq --project_id=${{ secrets.GCP_PROJECT_ID }} --location=europe-central2 mk -d ${{ secrets.GCP_PROJECT_ID }}:forex_analysis
           fi
-          QUERY="CREATE EXTERNAL TABLE IF NOT EXISTS \`${{ secrets.GCP_PROJECT_ID }}.forex_analysis.eurusd_raw\` OPTIONS (format = 'PARQUET', uris = ['gs://${GCS_BUCKET_NAME}/eur_usd/year=*/month=*/data_*.parquet']);"
+          QUERY="CREATE EXTERNAL TABLE IF NOT EXISTS \`${{ secrets.GCP_PROJECT_ID }}.forex_analysis.eurusd_raw\` OPTIONS (format = 'PARQUET', uris = ['gs://${GCS_BUCKET_NAME}/eur_usd/**']);"
           bq --project_id=${{ secrets.GCP_PROJECT_ID }} query --use_legacy_sql=false "$QUERY"
       
       - name: 📊 Extract Forex Data
