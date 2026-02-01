@@ -17,7 +17,7 @@ with source as (
     
     {% if is_incremental() %}
       -- Фільтр для дозапису: беремо тільки ті хвилини, яких ще немає в Silver. Додаємо CAST для обох сторін порівняння
-      where (datetime as datetime) > (select max(observed_at) from {{ this }})
+      where cast(datetime as datetime) > (select max(observed_at) from {{ this }})
     {% endif %}
 ),
 
