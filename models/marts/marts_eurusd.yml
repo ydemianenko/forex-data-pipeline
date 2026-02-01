@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: fct_eurusd_timeframes
+    columns:
+      - name: unique_id
+        tests:
+          - unique
+          - not_null
+
+      - name: timeframe
+        tests:
+          - accepted_values:
+              values: ['5m', '15m', '30m', '1h', '4h', '12h', '24h']
+
+      - name: candle_start # Перейменовано
+        tests:
+          - not_null
+
+      - name: price_diff # Нова колонка
+        description: "Absolute difference between current close and previous close"
