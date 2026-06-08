@@ -222,6 +222,12 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# macOS
+.DS_Store
+
+# Output / analysis results (local only)
+output/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

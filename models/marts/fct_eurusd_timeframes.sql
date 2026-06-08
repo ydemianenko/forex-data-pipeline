@@ -1,8 +1,16 @@
 {{
   config(
     materialized='incremental',
-    unique_key='unique_id',
+    unique_key=['timeframe', 'candle_start'],
     incremental_strategy='merge',
+    merge_update_columns=[
+      'open_price', 'high_price', 'low_price', 'close_price',
+      'ticks_5m_count', 'price_diff', 'sma_20', 'sma_50',
+      'high_fractal_3', 'high_fractal_5',
+      'low_fractal_3', 'low_fractal_5',
+      'is_complete_5',
+      'dbt_updated_at'
+    ],
     partition_by={
       'field': 'candle_start',
       'data_type': 'datetime',
@@ -77,10 +85,76 @@ indicators as (
         avg(close_price) over (partition by timeframe order by candle_start rows between 19 preceding and current row) as sma_20,
         avg(close_price) over (partition by timeframe order by candle_start rows between 49 preceding and current row) as sma_50
     from aggregated
+),
+
+with_fractals as (
+    select
+        *,
+        -- Williams fractals: lag/lead window per timeframe ordered by candle_start.
+        -- ±1 neighbours (3-bar definition):
+        lag(high_price, 1)  over w as h_p1,
+        lead(high_price, 1) over w as h_n1,
+        lag(low_price, 1)   over w as l_p1,
+        lead(low_price, 1)  over w as l_n1,
+        -- ±2 neighbours (extra constraint for 5-bar definition):
+        lag(high_price, 2)  over w as h_p2,
+        lead(high_price, 2) over w as h_n2,
+        lag(low_price, 2)   over w as l_p2,
+        lead(low_price, 2)  over w as l_n2
+    from indicators
+    window w as (partition by timeframe order by candle_start)
 )
 
-select 
-    md5(concat(timeframe, cast(candle_start as string))) as unique_id,
-    *,
+select
+    timeframe,
+    candle_start,
+    open_price,
+    high_price,
+    low_price,
+    close_price,
+    ticks_5m_count,
+    price_diff,
+    sma_20,
+    sma_50,
+
+    -- 3-bar Williams up-fractal: high(N) > both immediate neighbours
+    coalesce(
+        high_price > h_p1
+        and high_price > h_n1,
+        false
+    ) as high_fractal_3,
+
+    -- 5-bar Williams up-fractal: high(N) > ±1 and ±2 neighbours (subset of 3-bar)
+    coalesce(
+        high_price > h_p1
+        and high_price > h_n1
+        and high_price > h_p2
+        and high_price > h_n2,
+        false
+    ) as high_fractal_5,
+
+    -- 3-bar Williams down-fractal
+    coalesce(
+        low_price < l_p1
+        and low_price < l_n1,
+        false
+    ) as low_fractal_3,
+
+    -- 5-bar Williams down-fractal
+    coalesce(
+        low_price < l_p1
+        and low_price < l_n1
+        and low_price < l_p2
+        and low_price < l_n2,
+        false
+    ) as low_fractal_5,
+
+    -- TRUE when bar has full ±2 neighbours, so 5-bar verdict is final.
+    -- FALSE for the latest 2 bars per timeframe (right-side window not yet known).
+    (h_p2 is not null and h_n2 is not null
+     and l_p2 is not null and l_n2 is not null) as is_complete_5,
+
+    current_timestamp() as dbt_inserted_at,
     current_timestamp() as dbt_updated_at
-from indicators
+
+from with_fractals
